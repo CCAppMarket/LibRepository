@@ -28,7 +28,7 @@ function downloadApp(app_name)
 
 	-- Create bin shortcut
 	local f_sc = fs.open(CCAM_CONF.BIN_DIR .. app_name, 'w')
-	f_sc.write("shell.run('" .. CCAM_CONF.APP_DIR .. app_name .. CCAM_CONF.APP_MAIN .. "')")
+	f_sc.write("shell.run('" .. CCAM_CONF.APP_DIR .. app_name .. CCAM_CONF.APP_MAIN .. "', ...)")
 	f_sc.close()
 end
 
