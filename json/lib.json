@@ -5,4 +5,8 @@
 		"minor":0,
 		"build":1,
 	},
+	"files":[
+		"main.lua",
+		"lib.json"
+	]
 }

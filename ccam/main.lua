@@ -51,7 +51,11 @@ function deleteApp(app_name)
 	end
 end
 
-function updateApp(app_name)
+function updateApp(app_name, isLib)
+	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
+	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
+	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
+
 	-- Check that app exists
 	if not appExists(app_name) then
 		printError("Error: App doesn't exist")
@@ -59,7 +63,7 @@ function updateApp(app_name)
 	end
 
 	-- Check for update
-	local needUpdate = checkForUpdate(app_name)
+	local needUpdate = checkForUpdate(app_name, isLib)
 
 	if needUpdate then
 		term.write("Are you sure you want to update " .. app_name .. "? (y/N): ")
@@ -67,21 +71,21 @@ function updateApp(app_name)
 		if ans == 'y' or ans == 'Y' then
 
 			-- Save app configuration
-			local config = json.decodeFromFile(CCAM_CONF.APP_DIR .. app_name .. CCAM_CONF.APP_CONF).configuration
+			local config = json.decodeFromFile(dir .. app_name .. conf).configuration
 
 
 			-- Download files
-			local fjson = net.download(CCAM_CONF.APP_REPO .. app_name .. CCAM_CONF.APP_CONF)
+			local fjson = net.download(repo .. app_name .. conf)
 			local file_list = json.decode(fjson).files
 			
 			for _, v in pairs(file_list) do
-				net.downloadFile(CCAM_CONF.APP_REPO .. app_name .. "/" .. v,
-								 CCAM_CONF.APP_DIR  .. app_name .. "/" .. v)
+				net.downloadFile(repo .. app_name .. "/" .. v,
+								 dir  .. app_name .. "/" .. v)
 			end
 
 			-- Setup app configuration
-			local json_data = json.decodeFromFile(CCAM_CONF.APP_DIR .. app_name .. CCAM_CONF.APP_CONF)
-			local new_json = fs.open(CCAM_CONF.APP_DIR .. app_name .. CCAM_CONF.APP_CONF, 'w')
+			local json_data = json.decodeFromFile(dir .. app_name .. conf)
+			local new_json = fs.open(dir .. app_name .. conf, 'w')
 
 			-- Not overwrite old configuration options
 			for k, v in pairs(config) do
@@ -101,14 +105,16 @@ function updateApp(app_name)
 
 end
 
-function checkForUpdate(app_name)
+function checkForUpdate(app_name, isLib)
+	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
+	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 
 	-- Check current version
-	local currrent_version = getAppVersion(app_name)
+	local currrent_version = getAppVersion(app_name, isLib)
 	print("Current version: " .. utils.versionStr(currrent_version))
 
 	-- Check remote version
-	net.downloadFile(CCAM_CONF.APP_REPO .. app_name .. CCAM_CONF.APP_CONF,
+	net.downloadFile(repo .. app_name .. conf,
 					 CCAM_CONF.TMP_DIR .. app_name .. "_conf.cfg")
 
 	local file = fs.open(CCAM_CONF.TMP_DIR .. app_name .. "_conf.cfg", 'r')
@@ -122,8 +128,15 @@ function checkForUpdate(app_name)
 	return newest_version.build > currrent_version.build and true or false
 end
 
-function getAppVersion(app_name)
-	local app_json_file = fs.open(CCAM_CONF.APP_DIR .. app_name .. CCAM_CONF.APP_CONF, 'r')
+function getAppVersion(app_name, isLib)
+	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
+	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
+
+	print("Checking: " .. app_name)
+	print("Library: ", isLib)
+	print("Directory:" .. dir .. app_name .. conf)
+	
+	local app_json_file = fs.open(dir .. app_name .. conf, 'r')
 
 	-- Decode JSON
 	local data = json.decode(app_json_file.readAll())
