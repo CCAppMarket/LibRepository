@@ -1,6 +1,6 @@
-function downloadApp(app_name)
+function download(app_name)
 	-- Check if app already exists
-	if appExists(app_name) then
+	if exists(app_name) then
 		printError("Error: App already exists\nUse option 'update' to update the app")
 		return false
 	end
@@ -32,10 +32,10 @@ function downloadApp(app_name)
 	f_sc.close()
 end
 
-function deleteApp(app_name, isLib)
+function delete(app_name, isLib)
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 	-- Check that app exists
-	if not appExists(app_name, isLib) then
+	if not exists(app_name, isLib) then
 		printError("Error: App doesn't exist")
 		return false
 	end
@@ -54,13 +54,13 @@ function deleteApp(app_name, isLib)
 	end
 end
 
-function updateApp(app_name, isLib)
+function update(app_name, isLib)
 	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 
 	-- Check that app exists
-	if not appExists(app_name, isLib) then
+	if not exists(app_name, isLib) then
 		printError("Error: App doesn't exist")
 		return false
 	end
@@ -114,7 +114,7 @@ function checkForUpdate(app_name, isLib)
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 
 	-- Check current version
-	local currrent_version = getAppVersion(app_name, isLib)
+	local currrent_version = getVersion(app_name, isLib)
 	print("Current version: " .. utils.versionStr(currrent_version))
 
 	-- Check remote version
@@ -132,7 +132,7 @@ function checkForUpdate(app_name, isLib)
 	return newest_version.build > currrent_version.build and true or false
 end
 
-function getAppVersion(app_name, isLib)
+function getVersion(app_name, isLib)
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 	
@@ -146,7 +146,7 @@ function getAppVersion(app_name, isLib)
 	return data.version
 end
 
-function appExists(app_name, isLib)
+function exists(app_name, isLib)
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 	return fs.exists(dir .. app_name)
 end
