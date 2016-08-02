@@ -73,7 +73,6 @@ function updateApp(app_name, isLib)
 			-- Save app configuration
 			local config = json.decodeFromFile(dir .. app_name .. conf).configuration
 
-
 			-- Download files
 			local fjson = net.download(repo .. app_name .. conf)
 			local file_list = json.decode(fjson).files
@@ -87,9 +86,11 @@ function updateApp(app_name, isLib)
 			local json_data = json.decodeFromFile(dir .. app_name .. conf)
 			local new_json = fs.open(dir .. app_name .. conf, 'w')
 
-			-- Not overwrite old configuration options
-			for k, v in pairs(config) do
-				json_data.configuration[k] = v
+			if config then
+				-- Not overwrite old configuration options
+				for k, v in pairs(config) do
+					json_data.configuration[k] = v
+				end
 			end
 
 			-- Encode to json and close file
@@ -131,10 +132,6 @@ end
 function getAppVersion(app_name, isLib)
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
-
-	print("Checking: " .. app_name)
-	print("Library: ", isLib)
-	print("Directory:" .. dir .. app_name .. conf)
 	
 	local app_json_file = fs.open(dir .. app_name .. conf, 'r')
 
