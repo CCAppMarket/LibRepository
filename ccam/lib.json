@@ -5,6 +5,10 @@
 		"minor":0,
 		"build":2,
 	},
+	"files":[
+		"main.lua",
+		"lib.json"
+	],
 	"configuration":{
 	},
 }
