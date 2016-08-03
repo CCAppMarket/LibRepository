@@ -46,7 +46,7 @@ function delete(app_name, isLib)
 	if ans == 'y' or ans == 'Y' then
 		-- Remove the app
 		fs.delete(dir .. app_name)
-		if isLib then
+		if not isLib then
 			fs.delete(CCAM_CONF.BIN_DIR .. app_name)
 		end
 	else
