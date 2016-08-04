@@ -54,7 +54,7 @@ function delete(resource, isLib)
 	end
 end
 
-function update(resource, isLib)
+function update(resource, isLib, silent)
 	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
@@ -66,7 +66,7 @@ function update(resource, isLib)
 	end
 
 	-- Check for update
-	local needUpdate = checkForUpdate(resource, isLib)
+	local needUpdate = checkForUpdate(resource, isLib, silent)
 
 	if needUpdate then
 		term.write("Are you sure you want to update " .. resource .. "? (y/N): ")
@@ -104,18 +104,41 @@ function update(resource, isLib)
 			print("Aborted.")
 		end
 	else
-		print("Resource is updated.")
+		if not silent then
+			print("Resource is updated.")
+		end
 	end
 
 end
 
-function checkForUpdate(resource, isLib)
+function updateall(silent)
+	print("Checking for updates...")
+	-- Update apps
+	for _, v in pairs(fs.list(CCAM_CONF.APP_DIR)) do
+		if not silent then
+			print("\nUpdating app: " .. v)
+		end
+		ccam.update(v, false, true)
+	end
+
+	-- Update libs
+	for _, v in pairs(fs.list(CCAM_CONF.LIB_DIR)) do
+		if not silent then
+			print("\nUpdating lib: " .. v)
+		end
+		ccam.update(v, true, true)
+	end
+end
+
+function checkForUpdate(resource, isLib, silent)
 	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 
 	-- Check current version
 	local currrent_version = getVersion(resource, isLib)
-	print("Current version: " .. utils.versionStr(currrent_version))
+	if not silent then
+		print("Current version: " .. utils.versionStr(currrent_version))
+	end
 
 	-- Check remote version
 	net.downloadFile(repo .. resource .. conf,
@@ -123,7 +146,9 @@ function checkForUpdate(resource, isLib)
 
 	local file = fs.open(CCAM_CONF.TMP_DIR .. resource .. "_conf.cfg", 'r')
 	local newest_version = json.decode(file.readAll()).version
-	print("Newest version: " .. utils.versionStr(newest_version))
+	if not silent then
+		print("Newest version: " .. utils.versionStr(newest_version))
+	end
 
 	file.close()
 	utils.clearTemp()
