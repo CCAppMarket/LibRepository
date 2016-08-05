@@ -118,7 +118,7 @@ function updateall(silent)
 		if not silent then
 			print("\nUpdating app: " .. v)
 		end
-		ccam.update(v, false, true)
+		ccam.update(v, false, silent)
 	end
 
 	-- Update libs
@@ -126,7 +126,7 @@ function updateall(silent)
 		if not silent then
 			print("\nUpdating lib: " .. v)
 		end
-		ccam.update(v, true, true)
+		ccam.update(v, true, silent)
 	end
 end
 
