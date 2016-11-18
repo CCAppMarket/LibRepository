@@ -175,3 +175,14 @@ function exists(resource, isLib)
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 	return fs.exists(dir .. resource)
 end
+
+function list(repo)
+	repo = repo or "CCAppMarket"
+	local api_response = http.get("https://api.github.com/repos/".. repo .."/AppRepository/contents")
+	local data = api_response.readAll()
+	local parsed = json.parseArray(data)
+
+	for _, b in pairs(parsed) do
+		print(b.path)
+	end
+end
