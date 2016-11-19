@@ -9,7 +9,7 @@ function download(resource)
 	local fjson = net.download(CCAM_CONF.APP_REPO .. resource .. CCAM_CONF.APP_CONF)
 	local file_json = json.decode(fjson)
 	local file_list = file_json.files
-	
+
 	for _, v in pairs(file_list) do
 		net.downloadFile(CCAM_CONF.APP_REPO .. resource .. "/" .. v,
 						 CCAM_CONF.APP_DIR  .. resource .. "/" .. v)
@@ -79,7 +79,7 @@ function update(resource, isLib, silent)
 			-- Download files
 			local fjson = net.download(repo .. resource .. conf)
 			local file_list = json.decode(fjson).files
-			
+
 			for _, v in pairs(file_list) do
 				net.downloadFile(repo .. resource .. "/" .. v,
 								 dir  .. resource .. "/" .. v)
@@ -160,7 +160,7 @@ end
 function getVersion(resource, isLib)
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
-	
+
 	local app_json_file = fs.open(dir .. resource .. conf, 'r')
 
 	-- Decode JSON
@@ -178,11 +178,24 @@ end
 
 function list(repo)
 	repo = repo or "CCAppMarket"
+	print("Repository: " .. repo)
 	local api_response = http.get("https://api.github.com/repos/".. repo .."/AppRepository/contents")
 	local data = api_response.readAll()
-	local parsed = json.parseArray(data)
+	local parsed = json.decode(data)
+
+	local app_ver = {}
 
 	for _, b in pairs(parsed) do
-		print(b.path)
+		local app_name = b.path
+		local dlver = http.get(CCAM_CONF.APP_REPO .. app_name .. CCAM_CONF.APP_CONF)
+		if dlver then
+			local v_data = dlver.readAll()
+			local v_parsed = json.decode(v_data)
+			local currentVer = "none"
+			if exists(app_name) then
+				currentVer = utils.versionStr(getVersion(app_name))
+			end
+			app_ver[app_name] = {currentVer, utils.versionStr(v_parsed.version)}
+			print(app_name .. "\t[Current: " .. currentVer .. ", Latest: " .. utils.versionStr(v_parsed.version) .. "]")
+		end
 	end
-end
