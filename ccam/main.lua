@@ -1,3 +1,16 @@
+
+function search(resource)
+	for k, v in pairs(CCAM_CONF.REPOS) do
+		print("Searching repo: " .. k)
+		if http.get(v  .. resource .. CCAM_CONF.APP_CONF) then
+			print("Found in repo: " .. k .. " -> " .. resource)
+			return v  .. resource
+		end
+	end
+
+	print("Resource not found")
+end
+
 function download(resource)
 	-- Check if app already exists
 	if exists(resource) then
@@ -108,7 +121,6 @@ function update(resource, isLib, silent)
 			print("Resource is updated.")
 		end
 	end
-
 end
 
 function updateall(silent)
