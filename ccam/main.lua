@@ -199,3 +199,4 @@ function list(repo)
 			print(app_name .. "\t[Current: " .. currentVer .. ", Latest: " .. utils.versionStr(v_parsed.version) .. "]")
 		end
 	end
+end
