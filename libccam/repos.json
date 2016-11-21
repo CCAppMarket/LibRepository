@@ -1,4 +1,14 @@
 {
-  "official":"https://raw.githubusercontent.com/CCAppMarket/AppRepository/stable/",
-  "acharluk":"https://raw.githubusercontent.com/acharluk/AppRepository/master/"
+  "official":{
+    "base_url":"https://raw.githubusercontent.com/",
+    "username":"CCAppMarket",
+    "repository":"AppRepository",
+    "branch":"stable",
+  },
+  "official_lib":{
+    "base_url":"https://raw.githubusercontent.com/",
+    "username":"CCAppMarket",
+    "repository":"LibRepository",
+    "branch":"stable",
+  },
 }

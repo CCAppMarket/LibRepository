@@ -1,14 +1,19 @@
 
-function search(resource)
+function search(resource, silent)
+	if not silent then print("Searching for: " .. resource) end
 	for k, v in pairs(CCAM_CONF.REPOS) do
-		print("Searching repo: " .. k)
-		if http.get(v  .. resource .. CCAM_CONF.APP_CONF) then
-			print("Found in repo: " .. k .. " -> " .. resource)
-			return v  .. resource
+		local url = v.base_url .. v.username .. "/" .. v.repository .. "/" .. v.branch .. "/"
+		if not silent then print("Searching repo: " .. k) end
+		if http.get(url  .. resource .. CCAM_CONF.APP_CONF) then
+			if not silent then print("Found in repo: " .. k .. " -> " .. resource) end
+			return url .. resource
+		elseif http.get(url  .. resource .. CCAM_CONF.LIB_CONF) then
+			if not silent then print("Found in repo: " .. k .. " -> " .. resource) end
+			return url .. resource
 		end
 	end
 
-	print("Resource not found")
+	error("Resource not found: " .. resource)
 end
 
 function download(resource)
@@ -19,12 +24,13 @@ function download(resource)
 	end
 
 	-- Download app files
-	local fjson = net.download(CCAM_CONF.APP_REPO .. resource .. CCAM_CONF.APP_CONF)
+	local search_result = search(resource, true)
+	local fjson = net.download(search_result .. CCAM_CONF.APP_CONF)
 	local file_json = json.decode(fjson)
 	local file_list = file_json.files
 
 	for _, v in pairs(file_list) do
-		net.downloadFile(CCAM_CONF.APP_REPO .. resource .. "/" .. v,
+		net.downloadFile(search_result .. "/" .. v,
 						 CCAM_CONF.APP_DIR  .. resource .. "/" .. v)
 	end
 
@@ -32,9 +38,9 @@ function download(resource)
 	local dependencies = file_json.dependencies
 	for _, v in pairs(dependencies) do
 		if not fs.exists(CCAM_CONF.LIB_DIR .. v) then
-			net.downloadFile(CCAM_CONF.LIB_REPO .. v .. CCAM_CONF.LIB_MAIN,
+			net.downloadFile(search_result .. CCAM_CONF.LIB_MAIN,
 							 CCAM_CONF.LIB_DIR  .. v .. CCAM_CONF.LIB_MAIN)
-			net.downloadFile(CCAM_CONF.LIB_REPO .. v .. CCAM_CONF.LIB_CONF,
+			net.downloadFile(search_result .. CCAM_CONF.LIB_CONF,
 							 CCAM_CONF.LIB_DIR  .. v .. CCAM_CONF.LIB_CONF)
 		end
 	end
@@ -68,7 +74,7 @@ function delete(resource, isLib)
 end
 
 function update(resource, isLib, silent)
-	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
+	local repo = search(resource, true) --isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 
@@ -143,7 +149,7 @@ function updateall(silent)
 end
 
 function checkForUpdate(resource, isLib, silent)
-	local repo = isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
+	local repo = search(resource, true) --isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
 	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
 
 	-- Check current version
@@ -153,7 +159,7 @@ function checkForUpdate(resource, isLib, silent)
 	end
 
 	-- Check remote version
-	net.downloadFile(repo .. resource .. conf,
+	net.downloadFile(repo .. conf,
 					 CCAM_CONF.TMP_DIR .. resource .. "_conf.cfg")
 
 	local file = fs.open(CCAM_CONF.TMP_DIR .. resource .. "_conf.cfg", 'r')
@@ -188,27 +194,34 @@ function exists(resource, isLib)
 	return fs.exists(dir .. resource)
 end
 
-function list(repo)
-	repo = repo or "CCAppMarket"
-	print("Repository: " .. repo)
-	local api_response = http.get("https://api.github.com/repos/".. repo .."/AppRepository/contents")
-	local data = api_response.readAll()
-	local parsed = json.decode(data)
+function list()
+	for repo, tab in pairs(CCAM_CONF.REPOS) do
+		print("\nRepository: " .. repo)
+		local api_response = http.get("https://api.github.com/repos/".. tab.username .."/" .. tab.repository .. "/contents?ref=" .. tab.branch)
+		local data = api_response.readAll()
+		local parsed = json.decode(data)
 
-	local app_ver = {}
+		local app_ver = {}
 
-	for _, b in pairs(parsed) do
-		local app_name = b.path
-		local dlver = http.get(CCAM_CONF.APP_REPO .. app_name .. CCAM_CONF.APP_CONF)
-		if dlver then
-			local v_data = dlver.readAll()
-			local v_parsed = json.decode(v_data)
-			local currentVer = "none"
-			if exists(app_name) then
-				currentVer = utils.versionStr(getVersion(app_name))
+		for _, b in pairs(parsed) do
+			local app_name = b.path
+			local isLib = false
+			if app_name ~= "README.md" then
+				local dlver = http.get(search(app_name, true) .. CCAM_CONF.APP_CONF)
+				if not dlver then dlver = http.get(search(app_name, true) .. CCAM_CONF.LIB_CONF) isLib = true end
+				if dlver then
+					local v_data = dlver.readAll()
+					dlver.close()
+					local v_parsed = json.decode(v_data)
+					local currentVer = "none"
+					if exists(app_name, isLib) then
+						currentVer = utils.versionStr(getVersion(app_name, isLib))
+					end
+					app_ver[app_name] = {currentVer, utils.versionStr(v_parsed.version)}
+					print(app_name .. "\t[Current: " .. currentVer .. ", Latest: " .. utils.versionStr(v_parsed.version) .. "]")
+				end
 			end
-			app_ver[app_name] = {currentVer, utils.versionStr(v_parsed.version)}
-			print(app_name .. "\t[Current: " .. currentVer .. ", Latest: " .. utils.versionStr(v_parsed.version) .. "]")
 		end
+
 	end
 end
