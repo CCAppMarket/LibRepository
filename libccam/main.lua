@@ -2,7 +2,6 @@
 function search(resource, silent)
 	if not silent then print("Searching for: " .. resource) end
 	for k, v in pairs(CCAM_CONF.REPOS) do
-		print(k,v)
 		local url = v.base_url .. v.username .. "/" .. v.repository .. "/" .. v.branch .. "/"
 		if not silent then print("Searching repo: " .. k) end
 
