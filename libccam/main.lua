@@ -175,9 +175,8 @@ end
 
 function getVersion(resource, isLib)
 	local conf = CCAM_CONF.CONF
-	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 
-	local app_json_file = fs.open(dir .. resource .. conf, 'r')
+	local app_json_file = fs.open(exists(resource) .. resource .. conf, 'r')
 
 	-- Decode JSON
 	local data = json.decode(app_json_file.readAll())
@@ -188,8 +187,8 @@ function getVersion(resource, isLib)
 end
 
 function exists(resource, isLib)
-	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
-	return fs.exists(dir .. resource)
+	return fs.exists(CCAM_CONF.APP_DIR .. resource) and CCAM_CONF.APP_DIR
+			or fs.exists(CCAM_CONF.LIB_DIR .. resource) and CCAM_CONF.LIB_DIR
 end
 
 function list()
