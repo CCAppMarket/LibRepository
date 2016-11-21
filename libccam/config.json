@@ -1,0 +1,15 @@
+{
+	"files": [
+		"main.lua",
+		"config.json",
+		"repos.json"
+	],
+	"configuration": [
+	],
+	"name": "ccam",
+	"version": {
+		"minor": 4,
+		"major": 1,
+		"build": 12
+	}
+}
