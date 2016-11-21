@@ -2,12 +2,11 @@
 function search(resource, silent)
 	if not silent then print("Searching for: " .. resource) end
 	for k, v in pairs(CCAM_CONF.REPOS) do
+		print(k,v)
 		local url = v.base_url .. v.username .. "/" .. v.repository .. "/" .. v.branch .. "/"
 		if not silent then print("Searching repo: " .. k) end
-		if http.get(url  .. resource .. CCAM_CONF.APP_CONF) then
-			if not silent then print("Found in repo: " .. k .. " -> " .. resource) end
-			return url .. resource
-		elseif http.get(url  .. resource .. CCAM_CONF.LIB_CONF) then
+
+		if http.get(url  .. resource .. CCAM_CONF.CONF) then
 			if not silent then print("Found in repo: " .. k .. " -> " .. resource) end
 			return url .. resource
 		end
@@ -25,7 +24,7 @@ function download(resource)
 
 	-- Download app files
 	local search_result = search(resource, true)
-	local fjson = net.download(search_result .. CCAM_CONF.APP_CONF)
+	local fjson = net.download(search_result .. CCAM_CONF.CONF)
 	local file_json = json.decode(fjson)
 	local file_list = file_json.files
 
@@ -38,16 +37,16 @@ function download(resource)
 	local dependencies = file_json.dependencies
 	for _, v in pairs(dependencies) do
 		if not fs.exists(CCAM_CONF.LIB_DIR .. v) then
-			net.downloadFile(search_result .. CCAM_CONF.LIB_MAIN,
-							 CCAM_CONF.LIB_DIR  .. v .. CCAM_CONF.LIB_MAIN)
-			net.downloadFile(search_result .. CCAM_CONF.LIB_CONF,
-							 CCAM_CONF.LIB_DIR  .. v .. CCAM_CONF.LIB_CONF)
+			net.downloadFile(search_result .. CCAM_CONF.MAIN,
+							 CCAM_CONF.LIB_DIR  .. v .. CCAM_CONF.MAIN)
+			net.downloadFile(search_result .. CCAM_CONF.CONF,
+							 CCAM_CONF.LIB_DIR  .. v .. CCAM_CONF.CONF)
 		end
 	end
 
 	-- Create bin shortcut
 	local f_sc = fs.open(CCAM_CONF.BIN_DIR .. resource, 'w')
-	f_sc.write("shell.run('" .. CCAM_CONF.APP_DIR .. resource .. CCAM_CONF.APP_MAIN .. "', ...)")
+	f_sc.write("shell.run('" .. CCAM_CONF.APP_DIR .. resource .. CCAM_CONF.MAIN .. "', ...)")
 	f_sc.close()
 end
 
@@ -75,7 +74,7 @@ end
 
 function update(resource, isLib, silent)
 	local repo = search(resource, true) --isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
-	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
+	local conf = CCAM_CONF.CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 
 	-- Check that app exists
@@ -150,7 +149,7 @@ end
 
 function checkForUpdate(resource, isLib, silent)
 	local repo = search(resource, true) --isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
-	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
+	local conf = CCAM_CONF.CONF
 
 	-- Check current version
 	local currrent_version = getVersion(resource, isLib)
@@ -176,7 +175,7 @@ function checkForUpdate(resource, isLib, silent)
 end
 
 function getVersion(resource, isLib)
-	local conf = isLib and CCAM_CONF.LIB_CONF or CCAM_CONF.APP_CONF
+	local conf = CCAM_CONF.CONF
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 
 	local app_json_file = fs.open(dir .. resource .. conf, 'r')
@@ -205,17 +204,15 @@ function list()
 
 		for _, b in pairs(parsed) do
 			local app_name = b.path
-			local isLib = false
 			if app_name ~= "README.md" then
-				local dlver = http.get(search(app_name, true) .. CCAM_CONF.APP_CONF)
-				if not dlver then dlver = http.get(search(app_name, true) .. CCAM_CONF.LIB_CONF) isLib = true end
+				local dlver = http.get(search(app_name, true) .. CCAM_CONF.CONF)
 				if dlver then
 					local v_data = dlver.readAll()
 					dlver.close()
 					local v_parsed = json.decode(v_data)
 					local currentVer = "none"
-					if exists(app_name, isLib) then
-						currentVer = utils.versionStr(getVersion(app_name, isLib))
+					if exists(app_name) then
+						currentVer = utils.versionStr(getVersion(app_name))
 					end
 					app_ver[app_name] = {currentVer, utils.versionStr(v_parsed.version)}
 					print(app_name .. "\t[Current: " .. currentVer .. ", Latest: " .. utils.versionStr(v_parsed.version) .. "]")
