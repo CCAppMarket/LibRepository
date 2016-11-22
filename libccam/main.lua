@@ -72,7 +72,7 @@ function delete(resource, isLib)
 end
 
 function update(resource, isLib, silent)
-	local repo = search(resource, true) --isLib and CCAM_CONF.LIB_REPO or CCAM_CONF.APP_REPO
+	local repo = search(resource, true)
 	local dir = isLib and CCAM_CONF.LIB_DIR or CCAM_CONF.APP_DIR
 
 	-- Check that app exists
@@ -194,12 +194,11 @@ function list()
 		local data = api_response.readAll()
 		local parsed = json.decode(data)
 
-		local app_ver = {}
-
 		for _, b in pairs(parsed) do
 			local app_name = b.path
 			if app_name ~= "README.md" then
 				local dlver = http.get(search(app_name, true) .. CCAM_CONF.CONF)
+
 				if dlver then
 					local v_data = dlver.readAll()
 					dlver.close()
@@ -208,9 +207,10 @@ function list()
 					if exists(app_name) then
 						currentVer = utils.versionStr(getVersion(app_name))
 					end
-					app_ver[app_name] = {currentVer, utils.versionStr(v_parsed.version)}
+
 					print(app_name .. "\t[Current: " .. currentVer .. ", Latest: " .. utils.versionStr(v_parsed.version) .. "]")
 				end
+
 			end
 		end
 
